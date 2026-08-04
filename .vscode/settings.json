@@ -1,0 +1,70 @@
+// .vscode/settings.json
+//
+// Workspace settings for the Film Club Shopify theme.
+//
+// This file tells VS Code three things. First, that .liquid files really are Liquid
+// and not plain HTML, so the Shopify extension switches itself on. Second, that Liquid
+// files should be tidied automatically every time they are saved, using the Shopify
+// Liquid extension as the formatter. Third, that the folders Shopify and Node generate
+// on their own should be hidden from the sidebar and skipped by search, so the file
+// tree only shows theme files a person actually edits.
+//
+// The formatting rule is written inside a "[liquid]" block on purpose. Written that
+// way it only touches Liquid files. If it were written at the top level it would
+// reformat every stylesheet and script in Dawn the first time each one was saved,
+// which would fill pull requests with thousands of lines of changes nobody made.
+//
+// This is a workspace file, so it applies to this project only and travels with the
+// repository. Anyone who clones the repo picks up the same behaviour without setting
+// anything up themselves.
+
+{
+  // Treat every .liquid file as the Liquid language rather than letting VS Code guess.
+  "files.associations": {
+    "*.liquid": "liquid"
+  },
+
+  // The Stretch B setting. Scoped to Liquid only, never global.
+  "[liquid]": {
+    "editor.defaultFormatter": "Shopify.theme-check-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // Run Shopify's theme checker as files are opened and edited, so template errors
+  // surface in the Problems panel instead of appearing later in the browser.
+  "themeCheck.checkOnOpen": true,
+  "themeCheck.checkOnChange": true,
+  "themeCheck.checkOnSave": true,
+
+  // Two spaces matches the indentation Dawn already ships with. Keeping this identical
+  // avoids whitespace-only diffs against the upstream theme.
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  // Strip trailing whitespace and guarantee a closing newline, which keeps Git diffs
+  // limited to real changes.
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Hide generated and vendor folders from the explorer so the theme structure is
+  // readable at a glance.
+  "files.exclude": {
+    "**/.shopify": true,
+    "**/node_modules": true
+  },
+
+  // Keep the same folders out of search results and off the file watcher, which also
+  // stops the watcher waking up for changes that are not ours.
+  "search.exclude": {
+    "**/.shopify": true,
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/.shopify/**": true,
+    "**/node_modules/**": true
+  },
+
+  // Dawn ships a large number of small snippet files. Opening one should not replace
+  // the tab you were already reading.
+  "workbench.editor.enablePreview": false
+}
