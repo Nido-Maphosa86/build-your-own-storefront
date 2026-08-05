@@ -1,4 +1,29 @@
+{% comment %}
+  sections/product-information.liquid
 
+  This is the main product page section for Film Club. Horizon ships it to lay out the
+  media gallery on one side and the product details on the other, plus an optional bar
+  that sticks to the bottom of the screen with the price and an add to cart button.
+
+  Two things were added to it for this assignment, and both sit in one new panel called
+  the Shooter's Summary, placed just above the main product layout.
+
+  The first is a cost breakdown. Film is bought by the roll but shot frame by frame, so
+  the number a photographer actually cares about is what one exposure costs. The panel
+  takes the variant price in cents, adds a fixed handling amount, divides the result by
+  the number of exposures on the roll, and formats the answer as money. A small thumbnail
+  of the product sits next to it, requested at a fixed width so the browser is not asked
+  to download the full size original for a picture that renders small.
+
+  The second is a stock message with three possible outputs. It reads the inventory count
+  on the currently selected variant and says one of three things: sold out, a warning that
+  names exactly how many are left, or a plain in stock line. Which one appears is decided
+  entirely by that number, so changing inventory in the admin changes the message.
+
+  Nothing below the Shooter's Summary was altered. The sticky bar, the layout render, the
+  stylesheet and the schema are Horizon's own code, with only the panel styles appended to
+  the end of the existing stylesheet block.
+{% endcomment %}
 
 <script type="application/ld+json">
   {{ closest.product | structured_data }}
@@ -26,6 +51,95 @@
 
 {% render 'deferred-media-product-model-styles' %}
 {% render 'deferred-media-video-styles' %}
+
+{% comment %}
+  Shooter's Summary — everything from here to the closing tag of the panel is new.
+
+  The variables are worked out first so the markup underneath stays readable.
+
+  fc_exposures and fc_handling are hardcoded on purpose. Exposure count really belongs on
+  the product as structured data, and the handling amount belongs in theme settings, but
+  neither of those exists yet. They are written as single assigns so that swapping them
+  for a real reference later is a one line change in each case rather than a hunt through
+  the markup.
+{% endcomment %}
+
+{% liquid
+  # closest.product is what this section is given inside the product template. The
+  # fallback keeps the panel from breaking if the section is ever rendered somewhere
+  # that does not supply it.
+  assign fc_product = closest.product | default: product
+  assign fc_variant = fc_product.selected_or_first_available_variant
+
+  # The number the conditional below reads. Requires inventory tracking to be switched
+  # on for the variant, otherwise Shopify reports zero regardless of real stock.
+  assign fc_stock = fc_variant.inventory_quantity
+
+  # Frames on a standard roll. Placeholder for a future product level value.
+  assign fc_exposures = 36
+
+  # Handling added to every order, in cents. Placeholder for a future theme setting.
+  assign fc_handling = 1500
+
+  # plus adds the handling to the variant price while both are still plain integers,
+  # because money formatting turns the number into a string and stops the maths working.
+  assign fc_total = fc_variant.price | plus: fc_handling
+
+  # divided_by splits that total across the exposure count. Integer division is correct
+  # here since the values are cents and a fraction of a cent is not a real price.
+  assign fc_per_shot = fc_total | divided_by: fc_exposures
+
+  # image_url asks Shopify for a resized copy rather than the original upload. The panel
+  # thumbnail renders at 80 pixels, so 160 covers high density screens without pulling a
+  # file many times larger than needed.
+  assign fc_thumb = fc_product.featured_image | image_url: width: 160
+%}
+
+<div class="film-summary">
+  {% if fc_thumb != blank %}
+    <img
+      class="film-summary__thumb"
+      src="{{ fc_thumb }}"
+      alt="{{ fc_product.title | escape }}"
+      width="80"
+      height="80"
+      loading="lazy"
+    >
+  {% endif %}
+
+  <div class="film-summary__body">
+    <p class="film-summary__cost">
+      {{ fc_per_shot | money }} per exposure
+    </p>
+
+    <p class="film-summary__breakdown">
+      {{ fc_total | money }} across {{ fc_exposures }} frames, handling included
+    </p>
+
+    {% comment %}
+      The conditional. Three branches, all driven by fc_stock, which is the inventory
+      count on the selected variant. Each one produces different text, and moving the
+      inventory number in the admin moves the output between them.
+    {% endcomment %}
+    {% if fc_stock <= 0 %}
+      <p class="film-summary__stock film-summary__stock--out">
+        Out of stock. Ask us to hold one from the next delivery.
+      </p>
+    {% elsif fc_stock <= 5 %}
+      <p class="film-summary__stock film-summary__stock--low">
+        Only {{ fc_stock }} left on the shelf.
+      </p>
+    {% else %}
+      <p class="film-summary__stock film-summary__stock--in">
+        In stock and shipping today.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+{% comment %}
+  End of the Shooter's Summary. Everything below is Horizon's original section code.
+{% endcomment %}
 
 {% if section.settings.enable_sticky_add_to_cart %}
   {% render 'fly-to-cart-styles' %}
@@ -364,6 +478,71 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+  }
+
+  /* Shooter's Summary panel — added for the Liquid Fundamentals assignment. */
+  .film-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+    max-width: 640px;
+    margin: 0 auto var(--margin-md);
+    padding: var(--padding-sm) var(--padding-md);
+    border: 1px solid rgb(var(--color-foreground-rgb) / 0.14);
+    border-radius: var(--style-border-radius-buttons-primary);
+  }
+
+  .film-summary__thumb {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: calc(var(--style-border-radius-buttons-primary) / 2);
+  }
+
+  .film-summary__body {
+    min-width: 0;
+  }
+
+  .film-summary__cost {
+    margin: 0;
+    font-size: var(--font-h6--size);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.01em;
+  }
+
+  .film-summary__breakdown {
+    margin: var(--margin-3xs) 0 0;
+    font-size: var(--font-paragraph-small--size);
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+  }
+
+  .film-summary__stock {
+    margin: var(--margin-2xs) 0 0;
+    font-size: var(--font-paragraph-small--size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .film-summary__stock--out {
+    opacity: 0.65;
+    text-decoration: line-through;
+  }
+
+  .film-summary__stock--low::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+  }
+
+  @media screen and (max-width: 749px) {
+    .film-summary {
+      margin-inline: var(--margin-sm);
     }
   }
 {% endstylesheet %}

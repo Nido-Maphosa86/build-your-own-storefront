@@ -3,6 +3,21 @@
   It is used in the product block, featured product block, and the product card block.
   The product object is null or when placeholders are rendered.
 
+  A short description line was added for the Liquid Fundamentals assignment. Product
+  descriptions come out of the rich text editor wrapped in HTML, so printing one straight
+  onto a card would either show the tags as visible text or inject stray markup into the
+  grid. The description is therefore stripped of its tags first, then cut to a fixed
+  character count so that every card in a row ends up the same height regardless of how
+  much the description actually says.
+
+  Order matters between those two steps. Stripping first means the character count applies
+  to words a customer can read. Cutting first would count the tags themselves, so a
+  description that opened with a long tag could be trimmed to almost nothing visible, and
+  the cut could land halfway through a tag and leave it unclosed.
+
+  The line only renders on real products. Placeholder cards in the theme editor have no
+  description, and the blank check keeps an empty paragraph from taking up space there.
+
   @param {object} product - The product object
   @param {object} children - The children of the product card
   @param {object} [block] - The block object
@@ -19,6 +34,14 @@
       min-width: 250px;
     }
   {% endif %}
+
+  /* Card description line — added for the Liquid Fundamentals assignment. */
+  .film-card-blurb {
+    margin: 0;
+    font-size: var(--font-paragraph-small--size);
+    line-height: 1.45;
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+  }
 {% endstyle %}
 
 {% liquid
@@ -57,6 +80,11 @@
   if block_settings.background_color != blank
     render 'contrast-override', background_color: block_settings.background_color, text_color: block_settings.text_color, section_id: block.id
   endif
+
+  # strip_html removes the markup the rich text editor wraps around the description.
+  # truncate then caps what is left at 90 characters and appends an ellipsis, which is
+  # roughly two lines on a card at the size the grid renders.
+  assign fc_blurb = product.description | strip_html | truncate: 90
 %}
 
 <product-card
@@ -114,6 +142,12 @@
     "
   >
     {{ children }}
+
+    {%- unless onboarding -%}
+      {%- if fc_blurb != blank -%}
+        <p class="film-card-blurb">{{ fc_blurb }}</p>
+      {%- endif -%}
+    {%- endunless -%}
   </div>
 </product-card>
 
