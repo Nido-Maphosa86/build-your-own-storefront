@@ -3,11 +3,13 @@
 An independent Shopify storefront for analog film photography supply, built on the Horizon
 reference theme using Shopify CLI and tracked in Git.
 
-This README holds the Day 1 written decisions for the Build Your Own Storefront module.
-Everything below was written before any theme code was touched, in line with the
-assignment instruction that the store brief comes first.
+This README holds the written decisions for the Build Your Own Storefront module, recorded
+day by day. In every case the decisions were written before any theme code was touched,
+which is the order both assignment sheets ask for.
 
 ---
+
+# Day 1 — Store Setup & Development Environment
 
 ## Store Brief
 
@@ -175,7 +177,7 @@ stores it locally so preview links can render.
 
 ---
 
-## Stretch A — Local CLI changes versus Theme Editor changes under GitHub sync
+## Day 1 Stretch A — Local CLI changes versus Theme Editor changes under GitHub sync
 
 Once a theme is connected to a GitHub branch through Online Store, then Themes, then Add
 theme, then Connect from GitHub, the branch becomes the storage location for that theme.
@@ -215,7 +217,7 @@ The practical consequences are three.
 
 ---
 
-## Stretch B — VS Code configuration
+## Day 1 Stretch B — VS Code configuration
 
 The official Shopify Liquid extension was installed in VS Code, and formatting on save was
 enabled for Liquid files only, so that the setting does not override formatter choices for
@@ -240,7 +242,7 @@ actually editing.
 
 ---
 
-## Submission Checklist
+## Day 1 Submission Checklist
 
 **Part 1 — Written Decisions**
 
@@ -263,3 +265,124 @@ actually editing.
 2. Codebase pushed to a personal GitHub repository with no Shopify remote or history
    attached.
 3. Hot reloading confirmed working on `http://127.0.0.1:9292`.
+
+---
+
+# Day 2 — Liquid Fundamentals
+
+Branch: `Assignment1.2_LiquidFundamentals`
+
+All work for this day sits in `sections/` and `snippets/`. Nothing inside `templates/`
+was opened or edited.
+
+## Filter Log
+
+| Filter | File it lives in | What it changes on the page |
+|---|---|---|
+| `plus` | `sections/product-information.liquid` | Adds the flat handling amount to the variant price while both are still integers in cents, so the per exposure figure shown underneath reflects what the customer actually pays rather than the shelf price alone |
+| `divided_by` | `sections/product-information.liquid` | Splits that combined total across the 36 exposures on a roll, turning a single roll price into the per frame cost a photographer compares stocks on |
+| `image_url` | `sections/product-information.liquid` | Requests a 160 pixel wide copy of the product image for the summary thumbnail, so the panel stops pulling the full size original for a picture that renders at 80 pixels |
+| `strip_html` | `snippets/product-card.liquid` | Removes the paragraph and formatting tags the rich text editor wraps around the product description, so the card shows readable words instead of markup |
+| `truncate` | `snippets/product-card.liquid` | Cuts the stripped description to 90 characters with an ellipsis, so every card in a row ends at the same height no matter how long the original description runs |
+
+The price display uses `money` as the terminal formatter on both the per exposure figure
+and the combined total. It is not counted among the five, because Horizon already applies
+`money` throughout `snippets/price.liquid` and claiming it would be claiming existing theme
+code. The five listed above are all filters added by this assignment.
+
+`plus` and `divided_by` are applied before `money` on purpose. Money formatting returns a
+string with a currency symbol in it, and arithmetic filters cannot operate on that, so all
+the maths has to finish while the value is still a plain integer.
+
+`strip_html` is applied before `truncate` for the same ordering reason. Stripping first
+means the 90 character limit counts words a customer can read. Truncating first would count
+the tags, so a description opening with a long tag could be cut down to almost no visible
+text, and the cut could land in the middle of a tag and leave it unclosed.
+
+## Conditional Logic
+
+**Driving property:** `product.selected_or_first_available_variant.inventory_quantity`,
+assigned to the variable `fc_stock` at the top of the panel.
+
+**File:** `sections/product-information.liquid`, inside the Shooter's Summary panel.
+
+**Branches:**
+
+1. `fc_stock <= 0` renders a struck through out of stock line offering to hold one from the
+   next delivery.
+2. `fc_stock <= 5` renders a low stock warning that prints the exact remaining count, with a
+   dot marker before the text.
+3. Anything above 5 renders a plain in stock and shipping today line.
+
+Three branches rather than the two the brief requires, because the middle one is the
+commercially useful case. A customer who sees a number is being told something a plain in
+stock badge cannot tell them.
+
+**Requirement worth noting:** the variant must have inventory tracking switched on in the
+admin. Shopify reports an inventory quantity of zero for untracked variants regardless of
+real stock, which would pin the output to the sold out branch permanently.
+
+## Verification Notes
+
+Both pages were opened in the local preview at `http://127.0.0.1:9292` with
+`shopify theme dev` running, and each change was confirmed on screen rather than only read
+in the editor.
+
+**Product page.** The Shooter's Summary panel renders above the main product layout with
+the thumbnail, the per exposure figure, and the combined total line. The per exposure
+figure was checked by hand against the variant price to confirm the handling amount was
+included before the division rather than after.
+
+**Collection page.** Product cards render the shortened description underneath the existing
+card content. Cards whose descriptions run past the limit end in an ellipsis, and cards
+with short descriptions show the whole thing with no ellipsis, which confirms `truncate` is
+cutting rather than padding. No HTML tags appear as visible text on any card, which
+confirms `strip_html` runs first.
+
+**Conditional branches, each triggered in the admin by editing the inventory quantity on
+the selected variant and reloading the preview:**
+
+1. Inventory set to 0 produced the struck through out of stock line.
+2. Inventory set to 3 produced the low stock line reading three left on the shelf, with the
+   number matching what was entered.
+3. Inventory set to 25 produced the in stock and shipping today line.
+
+The middle branch was checked twice with different numbers to confirm the count in the
+sentence is being read from the variant rather than hardcoded.
+
+## Day 2 Stretch B — Metafield-Shaped Values
+
+Two values in `sections/product-information.liquid` are hardcoded placeholders standing in
+for structured data that does not exist yet.
+
+`fc_exposures` is fixed at 36, the frame count on a standard 35mm roll. This genuinely
+varies: 120 medium format gives 12 or 16 frames depending on the camera back, short rolls
+come in 24, and bulk loaded rolls are whatever the loader decided. Once Day 4 covers
+metafields this becomes a product level integer, and the assign line changes to read from
+it while every use of the variable underneath stays as written.
+
+`fc_handling` is fixed at 1500 cents. That is a shop wide figure rather than a per product
+one, so it belongs in theme settings rather than a metafield, and would be swapped for a
+`settings.` reference.
+
+Both were written as single assigns at the top of the block specifically so that the swap
+is a one line change in each case, rather than a hunt through the markup for every place
+the number appears.
+
+## Day 2 Submission Checklist
+
+**Part 1 — Written Decisions**
+
+1. Five distinct filters listed with target file and effect. Done, table above.
+2. Conditional plan names a real object property and every branch's output. Done.
+
+**Parts 2 and 3 — Section Edits**
+
+1. Product page carries three filters and the custom conditional, all branches verified.
+2. Collection page brings the combined filter count to five, all distinct.
+3. No edits made inside `templates/`.
+
+**Part 4 — Verification and Git**
+
+1. Local preview confirms all edits render correctly.
+2. Changes committed and pushed to the `Assignment1.2_LiquidFundamentals` branch.
