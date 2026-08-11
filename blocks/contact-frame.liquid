@@ -6,24 +6,59 @@
   block is accepted, but the numbered corner and the film border only make sense inside a
   sheet, so it is not intended for general reuse.
 
-  Two settings shape it. image_ratio decides whether the window is square, upright or
-  landscape, which matters because a roll shot in portrait orientation should proof as
-  portrait rather than being cropped square. frame_number prints the reference itself, and
-  is left as free text rather than a counter because photographers skip and reshoot frames,
-  so the numbers on a real sheet are rarely a clean sequence.
+  Three settings shape the frame itself. image_ratio decides whether the window is square,
+  upright or landscape, which matters because a roll shot in portrait orientation should
+  proof as portrait rather than being cropped square. frame_number prints the reference,
+  left as free text rather than a counter because photographers skip and reshoot frames, so
+  the numbers on a real sheet are rarely a clean sequence. product links the frame to the
+  item in the catalogue that this shot documents.
 
-  The border colour is read from --contact-sheet-line, which the parent section sets on its
-  tone class. That way a frame outlines itself correctly on a dark, light or amber sheet
-  without needing a setting of its own, and it still has a sensible fallback if the block is
-  ever placed outside a sheet.
+  That product link is what makes the structured content work. The Contact Sheet lives on
+  the homepage, where there is no product in context, so closest.product would always come
+  back empty. Picking the product on the block instead means the metafield and metaobject
+  data can be read wherever the sheet is placed.
+
+  Two pieces of structured content render underneath the frame.
+
+  The shot data metafield, custom.shot_data, is a single line of text holding the exposure
+  settings for that frame. It prints as a monospaced line under the number badge.
+
+  The film stock reference, custom.shot_on, is a list of film_stock metaobject entries. Each
+  entry carries the stock name, the process, the ISO it was made for and a description of
+  its grain. Because it is a list rather than a single reference, one frame can credit more
+  than one stock, which happens when a shot is duplicated across two rolls for comparison.
+
+  Blank state: if the product is not set, or the metafield is empty, or no stock is
+  referenced, the strip does not render at all. No wrapper, no border, no heading with
+  nothing beneath it. Each of the three pieces is guarded separately, so a frame with shot
+  data but no stock reference shows the data line alone rather than an empty stock list
+  beside it.
 {%- enddoc -%}
 
 {% assign block_settings = block.settings %}
 
 {% liquid
+  # The product this frame documents. Chosen on the block rather than inherited from the
+  # page, because the Contact Sheet sits on the homepage where no product is in context.
+  assign frame_product = block_settings.product
+
+  # Single line text metafield holding the exposure settings for this frame.
+  assign shot_data = frame_product.metafields.custom.shot_data
+
+  # List of film_stock metaobject entries. The .value is what turns the reference into
+  # the entries themselves rather than a list of ids.
+  assign film_stocks = frame_product.metafields.custom.shot_on.value
+
   # Alt text falls back to the frame number so the image is never announced as unlabelled
   # to a screen reader, even when the merchant has not written a description.
   assign frame_alt = block_settings.image.alt | default: block_settings.frame_number
+
+  # Worked out up front so the markup below can decide in one test whether the strip is
+  # needed at all, rather than opening a wrapper and then discovering it has no contents.
+  assign has_structured_content = false
+  if shot_data != blank or film_stocks != blank
+    assign has_structured_content = true
+  endif
 %}
 
 <figure
@@ -48,6 +83,57 @@
 
   {% if block_settings.frame_number != blank %}
     <figcaption class="contact-frame__number">{{ block_settings.frame_number }}</figcaption>
+  {% endif %}
+
+  {% comment %}
+    The structured content strip. The outer test means that when a frame has no product
+    linked, or the linked product carries neither piece of data, nothing is written at
+    all: no element, no border, no vertical space.
+  {% endcomment %}
+  {% if has_structured_content %}
+    <div class="contact-frame__data">
+      {% if shot_data != blank %}
+        {% comment %}
+          metafield_text is correct here rather than metafield_tag, because the value is a
+          single line of plain text and metafield_tag would wrap it in markup this layout
+          does not want.
+        {% endcomment %}
+        <p class="contact-frame__shot">{{ shot_data | metafield_text }}</p>
+      {% endif %}
+
+      {% if film_stocks != blank %}
+        <ul class="contact-frame__stocks">
+          {% for stock in film_stocks %}
+            <li class="contact-frame__stock">
+              <span class="contact-frame__stock-name">{{ stock.stock_name.value }}</span>
+
+              {% comment %}
+                Process and ISO are printed on one line as a spec pair. Each is guarded
+                separately, because an entry can legitimately carry one without the other:
+                an instant film has a process but no meaningful rated ISO.
+              {% endcomment %}
+              {% if stock.process.value != blank or stock.native_iso.value != blank %}
+                <span class="contact-frame__stock-spec">
+                  {%- if stock.process.value != blank -%}
+                    {{ stock.process.value }}
+                  {%- endif -%}
+                  {%- if stock.process.value != blank and stock.native_iso.value != blank -%}
+                    {{ ' · ' }}
+                  {%- endif -%}
+                  {%- if stock.native_iso.value != blank -%}
+                    ISO {{ stock.native_iso.value }}
+                  {%- endif -%}
+                </span>
+              {% endif %}
+
+              {% if stock.grain_character.value != blank %}
+                <span class="contact-frame__stock-grain">{{ stock.grain_character.value }}</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
   {% endif %}
 </figure>
 
@@ -89,11 +175,11 @@
     opacity: 0.25;
   }
 
-  /* The reference number, sat in the corner in the same monospaced face as the sheet
-     label so the two read as part of the same printed object. */
+  /* The reference number, sat in the corner of the window in the same monospaced face as
+     the sheet label so the two read as part of the same printed object. */
   .contact-frame__number {
     position: absolute;
-    bottom: 6px;
+    top: 6px;
     left: 8px;
     font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
     font-size: 0.6875rem;
@@ -102,6 +188,60 @@
     background: rgb(0 0 0 / 0.55);
     color: #ffcf8f;
     border-radius: 2px;
+  }
+
+  /* The structured content strip. This whole block only exists in the markup when there
+     is something to put in it, so there is no empty-state styling to write. */
+  .contact-frame__data {
+    margin-top: 8px;
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+  }
+
+  .contact-frame__shot {
+    margin: 0;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+  }
+
+  .contact-frame__stocks {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contact-frame__stock {
+    padding-left: 8px;
+    border-left: 2px solid var(--contact-sheet-line, rgb(128 128 128 / 0.3));
+  }
+
+  .contact-frame__stock + .contact-frame__stock {
+    margin-top: 6px;
+  }
+
+  .contact-frame__stock-name,
+  .contact-frame__stock-spec,
+  .contact-frame__stock-grain {
+    display: block;
+  }
+
+  .contact-frame__stock-name {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .contact-frame__stock-spec {
+    font-size: 0.625rem;
+    opacity: 0.7;
+  }
+
+  .contact-frame__stock-grain {
+    margin-top: 3px;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    opacity: 0.6;
   }
 {% endstylesheet %}
 
@@ -141,6 +281,12 @@
         }
       ],
       "default": "square"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:settings.product",
+      "info": "t:info.frame_product"
     }
   ],
   "presets": [
