@@ -236,6 +236,8 @@
     "edit_presets_in_theme_settings": "Edit presets in [theme settings](/editor?context=theme&category=typography)",
     "edit_variants_in_theme_settings": "Edit variant styling in [theme settings](/editor?context=theme&category=variant%20pickers)",
     "enable_filtering_info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)",
+    // Contact sheet: explains that the frame reference is typed rather than counted
+    "frame_number": "Free text rather than a counter, because frame numbers on a real roll are rarely sequential.",
     "grid_layout_on_mobile": "Grid layout is used for mobile",
     "hide_logo_on_home_page_help": "Logo will remain visible when sticky header is active",
     "hover_effects": "Applies to product and collection cards",
@@ -244,6 +246,8 @@
     "page_text_color_default_info": "Default for theme sections",
     "manage_countries_regions": "[Manage countries/regions](/admin/settings/markets)",
     "manage_languages": "[Manage languages](/admin/settings/languages)",
+    // Contact sheet: explains the blank state of the label along the top edge
+    "sheet_label": "Printed along the top edge of the sheet. Leave empty to hide it.",
     "transparent_background": "Review each template where transparent background is applied for readability",
     "video_alt_text": "Describe the video for assistive tech users",
     "video_autoplay": "Videos will be muted by default",
@@ -296,6 +300,10 @@
     "collections_grid": "Collection list: Grid",
     "colors": "Color palette",
     "contact_form": "Contact form",
+    // Custom block: a single numbered image on the contact sheet
+    "contact_frame": "Contact frame",
+    // Custom section: proof sheet layout of curated frames
+    "contact_sheet": "Contact sheet",
     // Name for layout container block in theme editor
     "content": "Content",
     "copyright": "Copyright",
@@ -311,6 +319,8 @@
     "editorial_jumbo_text": "Editorial: Jumbo text",
     "email_signup": "Email signup",
     "excerpt": "Excerpt",
+    // Custom block: full width margin annotation on the contact sheet
+    "exposure_note": "Exposure note",
     "faq_section": "FAQ",
     "featured_collection": "Featured collection",
     "featured_product": "Product highlight",
@@ -320,6 +330,8 @@
     "follow_on_shop": "Follow on Shop",
     "footer": "Footer",
     "footer_password": "Password footer",
+    // Custom block: shooting data line beside a contact frame
+    "frame_caption": "Frame caption",
     // Layout container block that groups other content
     "group": "Group",
     "header": "Header",
@@ -709,6 +721,12 @@
     // Typography spacing option for line height and letter spacing
     "tight": "Tight",
     "tiktok": "TikTok",
+    // Contact sheet tone: warm safelight cast
+    "tone_amber": "Amber",
+    // Contact sheet tone: dark proof sheet
+    "tone_dark": "Dark",
+    // Contact sheet tone: pale paper stock
+    "tone_light": "Light",
     "top": "Top",
     "top_left": "Top left",
     "top_right": "Top right",
@@ -783,6 +801,10 @@
     "bottom_padding": "Bottom padding",
     "button": "Button",
     "button_text_case": "Text case",
+    // Contact sheet: the shooting data line beside a frame
+    "caption": "Caption",
+    // Contact sheet: type size for the caption block
+    "caption_size": "Caption size",
     "card_height": "Card height",
     "card_hover_effect": "Card hover effect",
     "card_image_height": "Product image height",
@@ -855,6 +877,8 @@
     "equal_columns": "Equal columns",
     "error_color": "Error",
     "expand_first_group": "Expand first group",
+    // Contact sheet: the margin annotation body text
+    "exposure_note": "Note",
     "extend_media_to_screen_edge": "Extend media to screen edge",
     "extend_summary": "Extend to screen edge",
     "extra_large": "Extra large",
@@ -870,6 +894,10 @@
     "font_family": "Font family",
     "font_price": "Price font",
     "font_weight": "Font weight",
+    // Contact sheet: reference printed in the corner of a frame
+    "frame_number": "Frame number",
+    // Contact sheet: column count for the proof grid
+    "frames_per_row": "Frames per row",
     "full_width_first_image": "Full width first image",
     "full_width_on_mobile": "Full width on mobile",
     "gap": "Gap",
@@ -1069,6 +1097,10 @@
     "shadow_opacity": "Shadow opacity",
     // Background shape for carousel navigation buttons
     "shape": "Shape",
+    // Contact sheet: the roll reference printed along the top edge
+    "sheet_label": "Sheet label",
+    // Contact sheet: colour treatment of the whole proof sheet
+    "sheet_tone": "Sheet tone",
     // Checkbox label to toggle visibility of UI elements
     "show": "Show",
     "show_as_accordion": "Show as accordion on mobile",
@@ -1084,6 +1116,8 @@
     "show_sale_price_first": "Show sale price first",
     "show_search": "Show search",
     "show_second_image_on_hover": "Show second image on hover",
+    // Contact sheet: toggles the perforated film edges
+    "show_sprockets": "Show sprocket edges",
     "show_swatch_label": "Text labels for swatches",
     "show_tax_info": "Tax information",
     // Font size or element dimensions setting
@@ -1096,6 +1130,8 @@
     "small": "Small",
     // Animation timing control for slideshows and announcements
     "speed": "Speed",
+    // Contact sheet: size of each perforation on the film edges
+    "sprocket_density": "Sprocket size",
     // Financial statement or account summary setting
     "statement": "Statement",
     "sticky_add_to_cart": "Sticky add to cart",

@@ -1,0 +1,153 @@
+{%- doc -%}
+  A single frame on the contact sheet: one image with a small reference number printed in
+  the corner, the way a lab prints the frame number along the edge of a proof.
+
+  This block is specific to the Contact Sheet section. It will render anywhere a theme
+  block is accepted, but the numbered corner and the film border only make sense inside a
+  sheet, so it is not intended for general reuse.
+
+  Two settings shape it. image_ratio decides whether the window is square, upright or
+  landscape, which matters because a roll shot in portrait orientation should proof as
+  portrait rather than being cropped square. frame_number prints the reference itself, and
+  is left as free text rather than a counter because photographers skip and reshoot frames,
+  so the numbers on a real sheet are rarely a clean sequence.
+
+  The border colour is read from --contact-sheet-line, which the parent section sets on its
+  tone class. That way a frame outlines itself correctly on a dark, light or amber sheet
+  without needing a setting of its own, and it still has a sensible fallback if the block is
+  ever placed outside a sheet.
+{%- enddoc -%}
+
+{% assign block_settings = block.settings %}
+
+{% liquid
+  # Alt text falls back to the frame number so the image is never announced as unlabelled
+  # to a screen reader, even when the merchant has not written a description.
+  assign frame_alt = block_settings.image.alt | default: block_settings.frame_number
+%}
+
+<figure
+  class="contact-frame contact-frame--ratio-{{ block_settings.image_ratio }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="contact-frame__window">
+    {% if block_settings.image != blank %}
+      {{
+        block_settings.image
+        | image_url: width: 600
+        | image_tag: loading: 'lazy', class: 'contact-frame__image', alt: frame_alt
+      }}
+    {% else %}
+      {% comment %}
+        Placeholder keeps the grid from collapsing while a merchant is still choosing
+        images in the editor.
+      {% endcomment %}
+      {{ 'image' | placeholder_svg_tag: 'contact-frame__placeholder' }}
+    {% endif %}
+  </div>
+
+  {% if block_settings.frame_number != blank %}
+    <figcaption class="contact-frame__number">{{ block_settings.frame_number }}</figcaption>
+  {% endif %}
+</figure>
+
+{% stylesheet %}
+  .contact-frame {
+    position: relative;
+    margin: 0;
+  }
+
+  .contact-frame__window {
+    overflow: hidden;
+    background: rgb(0 0 0 / 0.35);
+    border: 1px solid var(--contact-sheet-line, rgb(128 128 128 / 0.3));
+  }
+
+  /* Ratio variants. Each sets one property, but as a class rather than a variable
+     because the values are fixed rather than merchant-entered. */
+  .contact-frame--ratio-square .contact-frame__window {
+    aspect-ratio: 1 / 1;
+  }
+
+  .contact-frame--ratio-portrait .contact-frame__window {
+    aspect-ratio: 3 / 4;
+  }
+
+  .contact-frame--ratio-landscape .contact-frame__window {
+    aspect-ratio: 3 / 2;
+  }
+
+  .contact-frame__image,
+  .contact-frame__placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .contact-frame__placeholder {
+    opacity: 0.25;
+  }
+
+  /* The reference number, sat in the corner in the same monospaced face as the sheet
+     label so the two read as part of the same printed object. */
+  .contact-frame__number {
+    position: absolute;
+    bottom: 6px;
+    left: 8px;
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    background: rgb(0 0 0 / 0.55);
+    color: #ffcf8f;
+    border-radius: 2px;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.contact_frame",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:settings.image"
+    },
+    {
+      "type": "text",
+      "id": "frame_number",
+      "label": "t:settings.frame_number",
+      "default": "14A",
+      "info": "t:info.frame_number"
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "t:settings.image_ratio",
+      "options": [
+        {
+          "value": "square",
+          "label": "t:options.square"
+        },
+        {
+          "value": "portrait",
+          "label": "t:options.portrait"
+        },
+        {
+          "value": "landscape",
+          "label": "t:options.landscape"
+        }
+      ],
+      "default": "square"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.contact_frame",
+      "category": "t:categories.storytelling"
+    }
+  ]
+}
+{% endschema %}

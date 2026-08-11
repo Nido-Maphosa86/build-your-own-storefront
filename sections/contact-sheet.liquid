@@ -1,0 +1,239 @@
+{% comment %}
+  sections/contact-sheet.liquid
+
+  A contact sheet is the proof print a photographer makes before enlarging anything. The
+  whole roll is laid out in a numbered grid so you can look across every frame at once and
+  mark the two or three worth printing properly. This section reproduces that object on the
+  storefront as an editorial layout rather than a product grid.
+
+  The section itself is only a frame and a grid. It holds no content of its own beyond an
+  optional label along the top edge. Everything inside comes from blocks the merchant adds
+  in the theme editor, which is what content_for 'blocks' pulls in.
+
+  Six settings live here at section level.
+
+  sheet_label prints a short line above the grid, the way a darkroom worker writes the roll
+  reference along the top of a real proof sheet.
+
+  frames_per_row and gap control the grid itself, as a column count and a pixel gap. Both
+  are passed down as CSS variables because each maps to exactly one CSS property.
+
+  sheet_tone is different. It changes the background, the text colour and the border all at
+  once, so it swaps a class rather than setting a variable. That follows the convention the
+  assignment points at: one property becomes a variable, several properties become a class.
+  Each tone class also sets --contact-sheet-line, which the child blocks read for their own
+  borders, so a frame's edge always matches whichever sheet it is sitting on.
+
+  show_sprockets draws the perforated film edges down the left and right of the sheet, and
+  sprocket_density controls how big those perforations are. The density control is hidden in
+  the editor unless the sprockets are switched on, since a size control for something not
+  being drawn is just noise in the sidebar.
+{% endcomment %}
+
+{% assign section_settings = section.settings %}
+
+<div
+  class="
+    contact-sheet
+    contact-sheet--tone-{{ section_settings.sheet_tone }}
+    {% if section_settings.show_sprockets %}contact-sheet--sprocketed{% endif %}
+  "
+  style="
+    --contact-sheet-columns: {{ section_settings.frames_per_row }};
+    --contact-sheet-gap: {{ section_settings.gap }}px;
+    --contact-sheet-sprocket: {{ section_settings.sprocket_density }}px;
+  "
+>
+  {% if section_settings.sheet_label != blank %}
+    <p class="contact-sheet__label">{{ section_settings.sheet_label }}</p>
+  {% endif %}
+
+  <div class="contact-sheet__grid">
+    {% content_for 'blocks' %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .contact-sheet {
+    position: relative;
+    padding: var(--padding-lg) var(--padding-xl);
+    border-radius: 2px;
+  }
+
+  /* Tone variants. Each changes four properties at once, which is why these are classes
+     rather than a single CSS variable. The --contact-sheet-line variable is declared here
+     so the child blocks can borrow a border colour that suits the sheet they sit on. */
+  .contact-sheet--tone-dark {
+    background: #14140f;
+    color: #f2efe4;
+    border: 1px solid #2b2b22;
+    --contact-sheet-line: rgb(242 239 228 / 0.22);
+  }
+
+  .contact-sheet--tone-light {
+    background: #f4f2ea;
+    color: #1d1d18;
+    border: 1px solid #d8d4c6;
+    --contact-sheet-line: rgb(29 29 24 / 0.22);
+  }
+
+  .contact-sheet--tone-amber {
+    background: #2a1a0d;
+    color: #ffcf8f;
+    border: 1px solid #4a2f16;
+    --contact-sheet-line: rgb(255 207 143 / 0.28);
+  }
+
+  /* The label along the top edge, set in a monospaced face so it reads as something
+     written on the sheet rather than marketing copy. */
+  .contact-sheet__label {
+    margin: 0 0 var(--margin-md);
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+
+  /* The grid. Column count and gap both come straight from section settings. */
+  .contact-sheet__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--contact-sheet-columns), minmax(0, 1fr));
+    gap: var(--contact-sheet-gap);
+    align-items: start;
+  }
+
+  /* Sprocket holes, drawn as a repeating gradient down both edges so no images are needed
+     and the size scales with the density setting. */
+  .contact-sheet--sprocketed {
+    padding-inline: calc(var(--contact-sheet-sprocket) * 2.4);
+  }
+
+  .contact-sheet--sprocketed::before,
+  .contact-sheet--sprocketed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: calc(var(--contact-sheet-sprocket) * 1.4);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      currentColor 0,
+      currentColor var(--contact-sheet-sprocket),
+      transparent var(--contact-sheet-sprocket),
+      transparent calc(var(--contact-sheet-sprocket) * 2.2)
+    );
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .contact-sheet--sprocketed::before {
+    left: calc(var(--contact-sheet-sprocket) * 0.5);
+  }
+
+  .contact-sheet--sprocketed::after {
+    right: calc(var(--contact-sheet-sprocket) * 0.5);
+  }
+
+  /* On narrow screens the column count is overridden to two, because six thumbnails
+     across a phone renders every frame too small to judge. */
+  @media screen and (max-width: 749px) {
+    .contact-sheet {
+      padding: var(--padding-md);
+    }
+
+    .contact-sheet__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.contact_sheet",
+  "blocks": [
+    {
+      "type": "@theme"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "sheet_label",
+      "label": "t:settings.sheet_label",
+      "default": "Roll 014 — Portra 400 — 35mm",
+      "info": "t:info.sheet_label"
+    },
+    {
+      "type": "header",
+      "content": "t:content.grid"
+    },
+    {
+      "type": "range",
+      "id": "frames_per_row",
+      "label": "t:settings.frames_per_row",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "t:settings.gap",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "header",
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "select",
+      "id": "sheet_tone",
+      "label": "t:settings.sheet_tone",
+      "options": [
+        {
+          "value": "dark",
+          "label": "t:options.tone_dark"
+        },
+        {
+          "value": "light",
+          "label": "t:options.tone_light"
+        },
+        {
+          "value": "amber",
+          "label": "t:options.tone_amber"
+        }
+      ],
+      "default": "dark"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sprockets",
+      "label": "t:settings.show_sprockets",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "sprocket_density",
+      "label": "t:settings.sprocket_density",
+      "min": 6,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 10,
+      "visible_if": "{{ section.settings.show_sprockets == true }}"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.contact_sheet",
+      "category": "t:categories.storytelling"
+    }
+  ]
+}
+{% endschema %}
