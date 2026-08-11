@@ -238,6 +238,7 @@
     "enable_filtering_info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)",
     // Contact sheet: explains that the frame reference is typed rather than counted
     "frame_number": "Free text rather than a counter, because frame numbers on a real roll are rarely sequential.",
+    "frame_product": "Links the frame to the product it documents, so its shot data and film stock can be shown.",
     "grid_layout_on_mobile": "Grid layout is used for mobile",
     "hide_logo_on_home_page_help": "Logo will remain visible when sticky header is active",
     "hover_effects": "Applies to product and collection cards",
