@@ -239,6 +239,7 @@
     // Contact sheet: explains that the frame reference is typed rather than counted
     "frame_number": "Free text rather than a counter, because frame numbers on a real roll are rarely sequential.",
     "frame_product": "Links the frame to the product it documents, so its shot data and film stock can be shown.",
+    "free_shipping_threshold": "Entered in your store currency, not cents. Set to 0 to hide the bar.",
     "grid_layout_on_mobile": "Grid layout is used for mobile",
     "hide_logo_on_home_page_help": "Logo will remain visible when sticky header is active",
     "hover_effects": "Applies to product and collection cards",
@@ -895,6 +896,8 @@
     "font_family": "Font family",
     "font_price": "Price font",
     "font_weight": "Font weight",
+    "free_shipping_bar_enabled": "Free shipping progress bar",
+    "free_shipping_threshold": "Free shipping threshold",
     // Contact sheet: reference printed in the corner of a frame
     "frame_number": "Frame number",
     // Contact sheet: column count for the proof grid
