@@ -4,6 +4,45 @@
   @param {boolean} [render_wrapper] - When true, wraps the drawer in the section wrapper that the Section Rendering API adds automatically.
 {% enddoc %}
 
+{% comment %}
+  Day 5 addition: the free shipping progress bar.
+
+  What was added is one Liquid block plus its styles, placed inside the cart summary area
+  further down this file. Everything else here is Horizon's own code, untouched.
+
+  Why no JavaScript was needed, traced through the actual files rather than assumed:
+
+  This snippet is rendered by sections/cart-drawer-section.liquid, which is two lines long
+  and does nothing but call this file with render_wrapper set to false. So everything in
+  here is the output of the section named cart-drawer-section.
+
+  Further down, cart-items-component is rendered with section_id: 'cart-drawer-section'.
+  That value lands on the element as data-section-id, and assets/component-cart-items.js
+  reads it back through its sectionId getter.
+
+  When a quantity changes, updateQuantity in that file posts to Theme.routes.cart_change_url
+  with a sections parameter seeded from this.sectionId, then calls morphSection with the
+  returned HTML for that same section. When an item is added from anywhere else on the page,
+  the listener on StandardEvents.cartLinesUpdate runs #handleCartUpdate, which morphs the
+  section if the event carried its HTML and otherwise calls
+  sectionRenderer.renderSection(this.sectionId, { cache: false, ...morphOptions }) — the
+  ?section_id=cart-drawer-section request visible in the Network tab.
+
+  Either path re-renders this entire file server side and swaps the result in. Markup placed
+  here is therefore already live, and adding a fetch call would fire a second request for
+  HTML the theme has already fetched, double-rendering the drawer.
+
+  One placement detail matters. Drawer morphs run in hydration mode, and the element carrying
+  data-hydration-key is .cart-drawer__inner. The bar is placed inside cart_items_children,
+  next to the cart summary, so it sits within the hydrated region rather than outside it. Put
+  above .cart-drawer__inner it would render on first load and then never update.
+
+  Units are cents throughout. cart.total_price is already in cents, and the merchant setting
+  is entered in whole currency units, so it is multiplied by 100 once at the top and every
+  comparison after that is cents against cents. Mixing the two is the usual source of a bar
+  that unlocks at one hundredth of the intended basket value.
+{% endcomment %}
+
 {%- liquid
   assign render_wrapper = render_wrapper | default: true, allow_false: true
 -%}
@@ -116,6 +155,84 @@
                 </scroll-hint>
 
                 <div class="cart-drawer__summary">
+                  {%- comment -%}
+                    Free shipping progress bar. Placed above the summary totals so a
+                    shopper sees how close they are before they read the subtotal, which
+                    is the moment the message is worth anything.
+                  {%- endcomment -%}
+                  {%- liquid
+                    # The merchant enters whole currency units. Everything downstream works
+                    # in cents, so the conversion happens once, here.
+                    assign fs_threshold = settings.free_shipping_threshold | times: 100
+
+                    # A single flag decides whether any of this renders. False when the
+                    # feature is switched off, and false when the threshold is zero or
+                    # blank, since a zero threshold is met by an empty cart and the bar
+                    # would say free shipping is unlocked before anything is in the basket.
+                    assign fs_show = false
+                    if settings.free_shipping_bar_enabled and fs_threshold > 0
+                      assign fs_show = true
+                    endif
+                  -%}
+
+                  {%- if fs_show -%}
+                    {%- liquid
+                      # cart.total_price is already in cents.
+                      assign fs_total = cart.total_price
+                      assign fs_remaining = fs_threshold | minus: fs_total
+
+                      # Percentage for the fill width. Multiplied before dividing so the
+                      # integer maths does not collapse to zero, and capped at 100 so an
+                      # over-threshold cart does not overflow the track.
+                      assign fs_percent = fs_total | times: 100 | divided_by: fs_threshold
+                      if fs_percent > 100
+                        assign fs_percent = 100
+                      endif
+
+                      assign fs_unlocked = false
+                      if fs_remaining <= 0
+                        assign fs_unlocked = true
+                      endif
+                    -%}
+
+                    <div
+                      class="free-shipping{% if fs_unlocked %} free-shipping--unlocked{% endif %}"
+                      style="--free-shipping-progress: {{ fs_percent }}%;"
+                    >
+                      {%- comment -%}
+                        aria-live announces the change to screen reader users when the
+                        section is morphed in, which is the accessible equivalent of the
+                        visual bar moving. polite rather than assertive, because this is
+                        useful information rather than an interruption.
+                      {%- endcomment -%}
+                      <p
+                        class="free-shipping__message"
+                        aria-live="polite"
+                      >
+                        {%- if fs_unlocked -%}
+                          {{ 'content.free_shipping_unlocked' | t }}
+                        {%- else -%}
+                          {{
+                            'content.free_shipping_remaining'
+                            | t: amount: fs_remaining | money
+                          }}
+                        {%- endif -%}
+                      </p>
+
+                      {%- comment -%}
+                        The track is decorative. The message above already carries the
+                        information in text, so the bar is hidden from assistive tech
+                        rather than announced twice.
+                      {%- endcomment -%}
+                      <div
+                        class="free-shipping__track"
+                        aria-hidden="true"
+                      >
+                        <div class="free-shipping__fill"></div>
+                      </div>
+                    </div>
+                  {%- endif -%}
+
                   {% render 'cart-summary', section_id: 'cart-drawer-section' %}
                 </div>
               </scroll-hint>
@@ -275,6 +392,57 @@
     .cart-drawer__header,
     .cart-drawer__content {
       background: transparent;
+    }
+  }
+
+  /* Free shipping progress bar — Day 5 addition.
+     Colours come from the theme's existing tokens rather than hex values, so the bar
+     inherits whatever palette the drawer is using instead of fighting it. */
+  .free-shipping {
+    width: 100%;
+  }
+
+  .free-shipping__message {
+    margin: 0 0 var(--margin-2xs);
+    font-size: var(--font-paragraph-small--size);
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .free-shipping__track {
+    height: 4px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 2px;
+    background-color: rgb(var(--color-foreground-rgb) / var(--opacity-10-25));
+  }
+
+  .free-shipping__fill {
+    height: 100%;
+    width: var(--free-shipping-progress, 0%);
+    background-color: var(--color-foreground);
+    border-radius: inherit;
+  }
+
+  /* The unlocked state shifts the fill to the theme's success token and gives the message
+     a little more weight, so the change reads at a glance rather than needing to be read. */
+  .free-shipping--unlocked .free-shipping__message {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .free-shipping--unlocked .free-shipping__fill {
+    background-color: var(--color-success, var(--color-foreground));
+  }
+
+  /* Stretch B. The transition is declared only inside a no-preference query rather than
+     being declared globally and then cancelled, so for anyone who has asked their system
+     to reduce motion the rule is never applied in the first place. Width animation on a
+     bar that can jump most of its length in one cart update is exactly the kind of motion
+     that triggers discomfort, and the information is in the number either way — an instant
+     jump loses nothing and the animated version has nothing to offer them. */
+  @media screen and (prefers-reduced-motion: no-preference) {
+    .free-shipping__fill {
+      transition: width 0.35s var(--ease-out-quad);
     }
   }
 {% endstylesheet %}
