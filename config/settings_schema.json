@@ -1479,6 +1479,19 @@
         "default": "page"
       },
       {
+        "type": "checkbox",
+        "id": "free_shipping_bar_enabled",
+        "label": "t:settings.free_shipping_bar_enabled",
+        "default": true
+      },
+      {
+        "type": "number",
+        "id": "free_shipping_threshold",
+        "label": "t:settings.free_shipping_threshold",
+        "default": 75,
+        "info": "t:info.free_shipping_threshold"
+      },
+      {
         "type": "select",
         "id": "product_title_case",
         "label": "t:settings.product_title_case",
