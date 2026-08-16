@@ -1,0 +1,105 @@
+{%- doc -%}
+  A one line caption that sits in the grid beside or beneath a frame, carrying the shooting
+  data a photographer writes on a proof sheet: the stock, the ISO it was rated at, the
+  aperture and shutter speed.
+
+  Kept deliberately separate from the frame block rather than being a setting on it. On a
+  real contact sheet not every frame is annotated, and the ones that are often get their
+  note in a different cell to the picture. Splitting them means a merchant can place a
+  caption wherever it belongs instead of being forced to attach one to every image.
+
+  This block is general enough to reuse. Nothing in it depends on the sheet, so it works in
+  any section that accepts theme blocks, though the monospaced styling will look most at
+  home inside the Contact Sheet.
+
+  caption_size swaps between three type sizes, since data lines and short titles want
+  different weights on the same sheet. text_color is a merchant colour that feeds a CSS
+  variable, so a caption can be pulled out from the sheet tone when it needs to stand apart.
+{%- enddoc -%}
+
+{% assign block_settings = block.settings %}
+
+<p
+  class="frame-caption frame-caption--size-{{ block_settings.caption_size }}"
+  style="--frame-caption-color: {{ block_settings.text_color }};"
+  {{ block.shopify_attributes }}
+>
+  {{ block_settings.caption }}
+</p>
+
+{% stylesheet %}
+  .frame-caption {
+    margin: 0;
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+
+    /* The colour comes from the block setting. If the merchant leaves it empty the
+       variable resolves to nothing and the caption inherits the sheet's text colour,
+       which is the sensible default. */
+    color: var(--frame-caption-color, currentColor);
+  }
+
+  /* Size variants. One property each, but fixed values rather than merchant input, so
+     they are classes. */
+  .frame-caption--size-small {
+    font-size: 0.6875rem;
+    opacity: 0.8;
+  }
+
+  .frame-caption--size-medium {
+    font-size: 0.8125rem;
+  }
+
+  .frame-caption--size-large {
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.frame_caption",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "caption",
+      "label": "t:settings.caption",
+      "default": "Portra 400 · rated 200 · f/2 · 1/250"
+    },
+    {
+      "type": "select",
+      "id": "caption_size",
+      "label": "t:settings.caption_size",
+      "options": [
+        {
+          "value": "small",
+          "label": "t:options.small"
+        },
+        {
+          "value": "medium",
+          "label": "t:options.medium"
+        },
+        {
+          "value": "large",
+          "label": "t:options.large"
+        }
+      ],
+      "default": "small"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.frame_caption",
+      "category": "t:categories.storytelling"
+    }
+  ]
+}
+{% endschema %}

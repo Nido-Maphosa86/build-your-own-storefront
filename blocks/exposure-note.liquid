@@ -1,0 +1,84 @@
+{%- doc -%}
+  A longer annotation that runs the full width of the sheet, with a coloured bar down its
+  left edge. On a physical proof sheet this is the grease pencil scrawl in the margin: the
+  reason a frame was kept, what went wrong with the ones either side of it, or the note to
+  push the next roll a stop.
+
+  Unlike the frame and caption blocks, this one deliberately breaks the grid. The CSS sets
+  it to span every column, so wherever a merchant drops it in the block list, it lands as a
+  full width band rather than sitting in a single cell. That is what makes it read as a
+  margin note about the frames around it rather than another item in the sequence.
+
+  This block is specific to the Contact Sheet. The full width span assumes it is inside a
+  CSS grid, so placing it in a section that lays blocks out any other way would leave it
+  looking like an ordinary paragraph.
+
+  note_accent is a merchant colour that feeds the left bar through a CSS variable, so
+  different notes on the same sheet can be colour coded the way a photographer uses
+  different pencils for keeps, rejects and reprints.
+{%- enddoc -%}
+
+{% assign block_settings = block.settings %}
+
+<div
+  class="exposure-note"
+  style="--exposure-note-accent: {{ block_settings.note_accent }};"
+  {{ block.shopify_attributes }}
+>
+  <div class="exposure-note__body">
+    {{ block_settings.note }}
+  </div>
+</div>
+
+{% stylesheet %}
+  .exposure-note {
+    /* Spans every column of the parent grid regardless of how many columns the section
+       is set to, which is what turns this from a cell into a band. */
+    grid-column: 1 / -1;
+
+    padding: var(--padding-sm) var(--padding-md);
+    border-left: 3px solid var(--exposure-note-accent, currentColor);
+    background: var(--contact-sheet-line, rgb(128 128 128 / 0.08));
+  }
+
+  .exposure-note__body {
+    font-size: var(--font-paragraph-small--size);
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+
+  .exposure-note__body > :first-child {
+    margin-top: 0;
+  }
+
+  .exposure-note__body > :last-child {
+    margin-bottom: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.exposure_note",
+  "tag": null,
+  "settings": [
+    {
+      "type": "richtext",
+      "id": "note",
+      "label": "t:settings.exposure_note",
+      "default": "<p>Frames 12 through 15 were shot into the light on purpose. The flare is the point, not a mistake — this is why the stock is worth the money.</p>"
+    },
+    {
+      "type": "color",
+      "id": "note_accent",
+      "label": "t:settings.color",
+      "default": "#ffcf8f"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.exposure_note",
+      "category": "t:categories.storytelling"
+    }
+  ]
+}
+{% endschema %}
