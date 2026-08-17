@@ -81,9 +81,9 @@
     render 'contrast-override', background_color: block_settings.background_color, text_color: block_settings.text_color, section_id: block.id
   endif
 
-  # strip_html removes the markup the rich text editor wraps around the description.
-  # truncate then caps what is left at 90 characters and appends an ellipsis, which is
-  # roughly two lines on a card at the size the grid renders.
+ # removes HTML tags from text. Descriptions written in Shopify's editor come wrapped in tags like <p> and <strong>. 
+ # Printing that straight onto a card would show the tags as visible clutter. This strips them out and leaves the plain words
+ # cuts text to a set length. The 90 is the character limit. Anything longer gets chopped and an ellipsis added.
   assign fc_blurb = product.description | strip_html | truncate: 90
 %}
 
