@@ -491,6 +491,10 @@
     padding: var(--padding-sm) var(--padding-md);
     border: 1px solid rgb(var(--color-foreground-rgb) / 0.14);
     border-radius: var(--style-border-radius-buttons-primary);
+    /* Prevents the sticky add-to-cart bar text from bleeding through the panel
+       on screens where both elements overlap. */
+    overflow: hidden;
+    position: relative;
   }
 
   .film-summary__thumb {
