@@ -1294,6 +1294,17 @@
     height: var(--font-paragraph--size);
     position: absolute;
   }
+
+  /* Film Club — Day 6 customisation.
+     Active filter pill gets a stronger border so it reads clearly as selected
+     against the collection background. Uses the existing foreground token at
+     full opacity rather than the subdued 10-25 opacity used elsewhere, so the
+     visual weight increase is consistent with the theme's own colour system. */
+  .filter-remove-buttons .facets__pill,
+  .facets__pill--active {
+    border-color: rgb(var(--color-foreground-rgb));
+    font-weight: var(--font-weight-semibold);
+  }
 {% endstylesheet %}
 
 {% schema %}
